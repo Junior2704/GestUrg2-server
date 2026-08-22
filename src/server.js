@@ -4,7 +4,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-
+import mailRouter from "./routes/mail.js";
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -33,7 +33,30 @@ const apiLimiter = rateLimit({
 });
 
 app.use("/api", apiLimiter);
+app.use("/api/mail", verifierApiKey, mailRouter);
+console.log("API_KEY chargée :", process.env.API_KEY);
+function verifierApiKey(req, res, next) {
 
+    const authorization = req.headers.authorization;
+
+    if (!authorization) {
+        return res.status(401).json({
+            success: false,
+            error: "Authentification requise"
+        });
+    }
+
+    const [type, key] = authorization.split(" ");
+
+    if (type !== "Bearer" || key !== process.env.API_KEY) {
+        return res.status(403).json({
+            success: false,
+            error: "Clé API invalide"
+        });
+    }
+
+    next();
+}
 // ==============================
 // ROUTE DE TEST
 // ==============================
