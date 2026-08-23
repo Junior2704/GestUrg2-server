@@ -17,7 +17,7 @@ export async function envoyerEmail({
     html,
     text
 }) {
-    if (!to) {
+    if (!to || (Array.isArray(to) && to.length === 0)) {
         throw new Error("Destinataire manquant");
     }
 
@@ -28,16 +28,15 @@ export async function envoyerEmail({
     if (!html && !text) {
         throw new Error("Contenu de l'e-mail manquant");
     }
-const info = await transporter.sendMail({
-    from: process.env.MAIL_FROM,
-    to,
-    subject,
-    text,
-    html,
 
-    // Encodage UTF-8
-    encoding: "UTF-8"
-});
+    const info = await transporter.sendMail({
+        from: process.env.MAIL_FROM,
+        to,
+        subject,
+        text,
+        html,
+        encoding: "UTF-8"
+    });
 
     console.log("E-mail envoyé :", info.messageId);
 
