@@ -364,73 +364,486 @@ const emailHtml = `
 
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Votre dossier d'hospitalisation</title>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Votre espace patient — GestUrg2</title>
+
 </head>
-<body style="margin:0; padding:0; background-color:#f4f6f9; font-family:'Segoe UI', Roboto, Arial, sans-serif; color:#333;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px; margin:auto; background:white; border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.08); overflow:hidden;">
-    <tr>
-      <td style="background-color:#1a73e8; padding:24px; text-align:center;">
-        <img src="https://junior2704.github.io/GestUrg2/logo.png" alt="Logo Hôpital" style="height:60px; display:block; margin:0 auto 10px auto;">
-        <h1 style="color:white; font-size:22px; margin:0;">HOPJ</h1>
-        <p style="color:#dce6f3; margin:6px 0 0; font-size:14px;">Service des Urgences</p>
-      </td>
-    </tr>
 
-    <tr>
-      <td style="padding:30px;">
-        <h2 style="color:#1a73e8; font-weight:600; margin-top:0;">Votre ordonnance médicale</h2>
 
-        <p style="font-size:16px; line-height:1.6;">
-          Bonjour <strong>${nomPatient}</strong>,
-        </p>
+<body
+    style="
+        margin:0;
+        padding:0;
+        background-color:#F6FBFA;
+        font-family:'Segoe UI',Roboto,Arial,sans-serif;
+        color:#12312D;
+    "
+>
 
-        <p style="font-size:15px; line-height:1.6; color:#555;">
-          Les documents relatifs à votre récente hospitalisation au sein du service des Urgences de l'HOPJ sont maintenant disponibles !
-        </p>
-  <p style="font-size:15px; line-height:1.6; color:#555;">
-          Rendez-vous sur votre espace patient en cliquant ci-dessous :
-        </p>
-        <div style="text-align:center; margin:30px 0;">
-          <a href="${lienPatient}" 
-             style="background-color:#1a73e8; color:white; padding:14px 32px; text-decoration:none; border-radius:8px; font-weight:500; display:inline-block;">
-            Acceder à mon espace patient
-          </a>
-        </div>
 
-        <p style="font-size:15px; line-height:1.6; color:#555;">
-          🚨 Afin de garantir la confidentialité de vos données, ce lien restera actif jusqu'au <strong>${dateExpirationFormatee}</strong>.
-          Une fois ce délai passé, il vous sera impossible d'accéder à vos documents, et nous ne pourrons pas vous y donner accès de nouveau.
-        </p>
-<br>
-  <p style="font-size:15px; line-height:1.6; color:#555;">
-N'hésitez pas à nous laisser un avis sur la page prévue à cet effet.
-Les avis sont entièrement anonymisés et nous permettent d'améliorer la qualité du service de soins que nous proposons.        </p>
- <div style="text-align:center; margin:30px 0;">
-  <a href="https://junior2704.github.io/GestUrg2/avis-patient" 
-     style="background-color:#1a73e8; color:white; padding:14px 32px; text-decoration:none; border-radius:8px; font-weight:500; display:inline-block;">
-    Laisser un avis
-  </a>
-</div>
+<!-- ============================================================
+     CONTENEUR PRINCIPAL
+============================================================ -->
 
-	  <p style="font-size:14px; color:#777;">
-          Pour toute question, merci de contacter le service des Urgences :
-          <a href="mailto:urgences.hopj@gmail.com" style="color:#1a73e8;">urgences.hopj@gmail.com</a>
-        </p>
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        background-color:#F6FBFA;
+        padding:35px 15px;
+    "
+>
 
-        <hr style="border:none; border-top:1px solid #e0e0e0; margin:30px 0;">
-        <p style="font-size:13px; color:#999; text-align:center;">
-          Service des Urgences<br>
-          <em>Cet e-mail a été généré automatiquement, merci de ne pas y répondre.</em><br>
-		  <em>Fièrement propulsé par GestUrg2 🚀</em>
-        </p>
-      </td>
-    </tr>
-  </table>
+<tr>
+
+<td align="center">
+
+
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        max-width:640px;
+        background-color:#FFFFFF;
+        border:1px solid #E2EEEC;
+        border-radius:22px;
+        overflow:hidden;
+        box-shadow:0 20px 50px -25px rgba(15,60,55,.35);
+    "
+>
+
+
+<!-- ============================================================
+     HEADER
+============================================================ -->
+
+<tr>
+
+<td
+    align="center"
+    style="
+        background-color:#0B544E;
+        padding:32px 25px 30px;
+    "
+>
+
+    <img
+        src="https://junior2704.github.io/GestUrg2/logo.png"
+        alt="GestUrg2"
+        width="76"
+        style="
+            display:block;
+            width:76px;
+            height:76px;
+            object-fit:contain;
+            margin:0 auto 16px;
+            background-color:#FFFFFF;
+            border-radius:20px;
+            padding:7px;
+        "
+    >
+
+    <div
+        style="
+            display:inline-block;
+            background-color:#DCF3F0;
+            color:#0B544E;
+            border-radius:999px;
+            padding:6px 13px;
+            font-size:11px;
+            font-weight:700;
+            letter-spacing:.08em;
+            text-transform:uppercase;
+            margin-bottom:12px;
+        "
+    >
+        🏥 ESPACE PATIENT
+    </div>
+
+    <h1
+        style="
+            margin:0;
+            color:#FFFFFF;
+            font-size:26px;
+            line-height:1.2;
+            font-weight:600;
+        "
+    >
+        GestUrg2
+    </h1>
+
+    <p
+        style="
+            margin:8px 0 0;
+            color:#D9EFEC;
+            font-size:14px;
+        "
+    >
+        Votre espace patient sécurisé
+    </p>
+
+</td>
+
+</tr>
+
+
+<!-- ============================================================
+     CONTENU
+============================================================ -->
+
+<tr>
+
+<td
+    style="
+        padding:35px 32px;
+    "
+>
+
+
+<h2
+    style="
+        margin:0 0 18px;
+        color:#0B544E;
+        font-size:24px;
+        line-height:1.25;
+        font-weight:600;
+    "
+>
+    Votre dossier d'hospitalisation
+</h2>
+
+
+<p
+    style="
+        margin:0 0 18px;
+        color:#12312D;
+        font-size:16px;
+        line-height:1.7;
+    "
+>
+    Bonjour <strong>${nomPatient}</strong>,
+</p>
+
+
+<p
+    style="
+        margin:0 0 16px;
+        color:#4C6B66;
+        font-size:15px;
+        line-height:1.7;
+    "
+>
+    Les documents relatifs à votre récente hospitalisation au sein
+    du service des Urgences sont maintenant disponibles.
+</p>
+
+
+<p
+    style="
+        margin:0 0 24px;
+        color:#4C6B66;
+        font-size:15px;
+        line-height:1.7;
+    "
+>
+    Vous pouvez les consulter directement depuis votre espace patient
+    sécurisé en cliquant sur le bouton ci-dessous.
+</p>
+
+
+<!-- ============================================================
+     BOUTON ESPACE PATIENT
+============================================================ -->
+
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+
+<tr>
+
+<td align="center">
+
+    <a
+        href="${lienPatient}"
+        style="
+            display:inline-block;
+            background-color:#0F766E;
+            color:#FFFFFF;
+            text-decoration:none;
+            padding:15px 28px;
+            border-radius:14px;
+            font-size:14px;
+            font-weight:700;
+            box-shadow:0 10px 25px -12px rgba(15,118,110,.7);
+        "
+    >
+        Accéder à mon espace patient →
+    </a>
+
+</td>
+
+</tr>
+
+</table>
+
+
+<!-- ============================================================
+     SÉCURITÉ
+============================================================ -->
+
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        margin-top:28px;
+    "
+>
+
+<tr>
+
+<td
+    style="
+        background-color:#DCF3F0;
+        border-radius:15px;
+        padding:16px 18px;
+    "
+>
+
+    <p
+        style="
+            margin:0;
+            color:#0B544E;
+            font-size:13px;
+            line-height:1.6;
+        "
+    >
+        🔒 <strong>Important :</strong>
+        afin de garantir la confidentialité de vos données,
+        ce lien restera actif jusqu'au
+        <strong>${dateExpirationFormatee}</strong>.
+    </p>
+
+</td>
+
+</tr>
+
+</table>
+
+
+<p
+    style="
+        margin:20px 0 0;
+        color:#4C6B66;
+        font-size:13px;
+        line-height:1.6;
+    "
+>
+    Une fois ce délai passé, l'accès à vos documents ne sera plus
+    possible via ce lien.
+</p>
+
+
+<!-- ============================================================
+     AVIS PATIENT
+============================================================ -->
+
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        margin-top:30px;
+    "
+>
+
+<tr>
+
+<td
+    style="
+        background-color:#FFF7F5;
+        border:1px solid #FDE4DF;
+        border-radius:16px;
+        padding:20px;
+    "
+>
+
+    <h3
+        style="
+            margin:0 0 8px;
+            color:#12312D;
+            font-size:17px;
+            font-weight:700;
+        "
+    >
+        Votre avis compte 💚
+    </h3>
+
+    <p
+        style="
+            margin:0 0 17px;
+            color:#4C6B66;
+            font-size:13px;
+            line-height:1.65;
+        "
+    >
+        Votre expérience nous aide à améliorer continuellement
+        la qualité de notre prise en charge.
+        Les avis sont entièrement anonymisés.
+    </p>
+
+
+    <a
+        href="https://junior2704.github.io/GestUrg2/avis-patient"
+        style="
+            display:inline-block;
+            background-color:#EF6351;
+            color:#FFFFFF;
+            text-decoration:none;
+            padding:12px 22px;
+            border-radius:12px;
+            font-size:13px;
+            font-weight:700;
+        "
+    >
+        Laisser mon avis →
+    </a>
+
+</td>
+
+</tr>
+
+</table>
+
+
+<!-- ============================================================
+     CONTACT
+============================================================ -->
+
+<p
+    style="
+        margin:28px 0 0;
+        color:#4C6B66;
+        font-size:13px;
+        line-height:1.6;
+    "
+>
+    Pour toute question, vous pouvez contacter le service
+    des Urgences :
+    <br>
+
+    <a
+        href="mailto:urgences.hopj@gmail.com"
+        style="
+            color:#0F766E;
+            text-decoration:none;
+            font-weight:700;
+        "
+    >
+        urgences.hopj@gmail.com
+    </a>
+</p>
+
+
+<!-- ============================================================
+     SÉPARATION
+============================================================ -->
+
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        margin:28px 0 20px;
+    "
+>
+
+<tr>
+
+<td
+    style="
+        border-top:1px solid #E2EEEC;
+        font-size:1px;
+        line-height:1px;
+    "
+>
+    &nbsp;
+</td>
+
+</tr>
+
+</table>
+
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+
+<p
+    style="
+        margin:0;
+        text-align:center;
+        color:#4C6B66;
+        font-size:11px;
+        line-height:1.7;
+    "
+>
+
+    Service des Urgences
+    <br>
+
+    <span style="color:#8AA19D;">
+        Cet e-mail a été généré automatiquement,
+        merci de ne pas y répondre.
+    </span>
+
+    <br>
+
+    <strong style="color:#0F766E;">
+        Fièrement propulsé par GestUrg2 🚀
+    </strong>
+
+</p>
+
+
+</td>
+
+</tr>
+
+
+</table>
+
+
+</td>
+
+</tr>
+
+</table>
+
+
 </body>
-</html>`;
 
+</html>
+`;
 
 
 const emailText = `
@@ -438,16 +851,30 @@ Bonjour ${nomPatient},
 
 Votre espace patient GestUrg2 est maintenant disponible.
 
-Vous pouvez accéder à vos documents médicaux ici :
+Les documents relatifs à votre récente hospitalisation sont disponibles dans votre espace patient.
+
+Vous pouvez y accéder ici :
 
 ${lienPatient}
 
-Pour vous connecter, vous devrez renseigner votre date de naissance.
+Pour vous connecter, vous devrez renseigner la date de naissance du patient.
 
-Ce lien est valable jusqu'au ${dateExpirationFormatee}.
+Pour des raisons de sécurité, ce lien restera actif jusqu'au ${dateExpirationFormatee}.
 
-Cet e-mail a été envoyé automatiquement par GestUrg2.
+Une fois ce délai passé, l'accès à vos documents ne sera plus possible via ce lien.
+
+Vous pouvez également nous laisser un avis, de manière entièrement anonymisée :
+
+https://junior2704.github.io/GestUrg2/avis-patient
+
+Pour toute question, vous pouvez contacter le service des Urgences :
+urgences.hopj@gmail.com
+
+Cet e-mail a été généré automatiquement.
+
+Fièrement propulsé par GestUrg2 🚀
 `;
+
 
 
 // ==================================================
