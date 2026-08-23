@@ -361,121 +361,66 @@ const dateExpirationFormatee =
 
 
 const emailHtml = `
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
+  <title>Vos documents d'hospitalisation</title>
 </head>
+<body style="margin:0; padding:0; background-color:#f4f6f9; font-family:'Segoe UI', Roboto, Arial, sans-serif; color:#333;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px; margin:auto; background:white; border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.08); overflow:hidden;">
+    <tr>
+      <td style="background-color:#1a73e8; padding:24px; text-align:center;">
+        <img src="https://junior2704.github.io/GestUrg2/logo.png" alt="Logo Hôpital" style="height:60px; display:block; margin:0 auto 10px auto;">
+        <h1 style="color:white; font-size:22px; margin:0;">HOPJ</h1>
+        <p style="color:#dce6f3; margin:6px 0 0; font-size:14px;">Service des Urgences</p>
+      </td>
+    </tr>
 
-<body style="
-    margin:0;
-    padding:0;
-    background:#f4f7fa;
-    font-family:Arial,Helvetica,sans-serif;
-">
+    <tr>
+      <td style="padding:30px;">
+        <h2 style="color:#1a73e8; font-weight:600; margin-top:0;">Votre ordonnance médicale</h2>
 
-<div style="
-    max-width:600px;
-    margin:30px auto;
-    background:white;
-    border-radius:16px;
-    padding:30px;
-    box-shadow:0 5px 20px rgba(0,0,0,.08);
-">
+        <p style="font-size:16px; line-height:1.6;">
+          Bonjour <strong>${nomPatient}</strong>,
+        </p>
 
-    <div style="text-align:center;margin-bottom:25px;">
+        <p style="font-size:15px; line-height:1.6; color:#555;">
+          Les documents relatifs à votre récente hospitalisation au sein du service des Urgences de l'HOPJ sont maintenant disponible(s) !
+        </p>
+  <p style="font-size:15px; line-height:1.6; color:#555;">
+          Rendez-vous sur votre espace patient en cliquant ci-desous :
+        </p>
+        <div style="text-align:center; margin:30px 0;">
+          <a href="${lienPatient}" 
+             style="background-color:#1a73e8; color:white; padding:14px 32px; text-decoration:none; border-radius:8px; font-weight:500; display:inline-block;">
+            Acceder à mon espace patient
+          </a>
+        </div>
 
-        <img
-            src="https://gesturg2.github.io/gesturg2/logog2.png"
-            alt="GestUrg2"
-            style="width:90px;"
-        >
+        <p style="font-size:15px; line-height:1.6; color:#555;">
+          🚨 Afin de garantir la confidentialité de vos données, ce lien restera actif j'ausqu'au <strong>${dateExpirationFormatee}</strong>.
+          Une fois ce délai passé, il vous sera impossible d'acceder à vos documents, et nous ne pourrons pas vous y donner accès de nouveau.
+        </p>
 
-    </div>
+        <p style="font-size:14px; color:#777;">
+          Pour toute question, merci de contacter le service des Urgences :
+          <a href="mailto:urgences.hopj@gmail.com" style="color:#1a73e8;">urgences.hopj@gmail.com</a>
+        </p>
 
-    <h1 style="
-        color:#0078d4;
-        text-align:center;
-        margin-bottom:25px;
-    ">
-        Votre espace patient
-    </h1>
-
-    <p>
-        Bonjour <strong>${nomPatient}</strong>,
-    </p>
-
-    <p>
-        Vous avez récemment été hospitalisé au service des Urgences de l'HOPJ.
-    </p>
-<p>
-        Les documents en rapport avec votre hospitalisation sont dès à présent disponibles sur votre espace patient !
-    </p>
-    <p>
-        Vous pouvez les consulter et les télecharger en cliquant sur le bouton ci-dessous.
-    </p>
-
-    <div style="
-        text-align:center;
-        margin:30px 0;
-    ">
-
-        <a
-            href="${lienPatient}"
-            style="
-                display:inline-block;
-                background:#0078d4;
-                color:white;
-                text-decoration:none;
-                padding:14px 24px;
-                border-radius:10px;
-                font-weight:bold;
-            "
-        >
-            Accéder à mon espace patient
-        </a>
-
-    </div>
-
-    <p style="
-        color:#666;
-        font-size:14px;
-        line-height:1.6;
-    ">
-        Pour des raisons de sécurité, lors de l'accès à votre espace patient, nous vous demanderons de vous authentifier à l'aide de votre date de naissance.
-    </p>
-
-    <p style="
-        color:#666;
-        font-size:14px;
-        line-height:1.6;
-    ">
-        Ce lien est valable jusqu'au
-        <strong>${dateExpirationFormatee}</strong>. Passé cette date, il vous sera impossible d'acceder à ces documents. L'hôpital n'est pas en mesure de vous re-donner accès à cet espace.
-    </p>
-
-    <hr style="
-        border:none;
-        border-top:1px solid #ddd;
-        margin:25px 0;
-    ">
-
-    <p style="
-        color:#888;
-        font-size:12px;
-        text-align:center;
-    ">
-	En cas de difficulté, merci de prendre contact avec le sectrétariat des Urgences<br>
-        Cet e-mail a été envoyé automatiquement, merci de ne pas y répondre
-		<br>
-		Fièrement propulsé par GestUrg2 🚀
-    </p>
-
-</div>
-
+        <hr style="border:none; border-top:1px solid #e0e0e0; margin:30px 0;">
+        <p style="font-size:13px; color:#999; text-align:center;">
+          Service des Urgences<br>
+          <em>Cet e-mail a été généré automatiquement, merci de ne pas y répondre.</em>
+		  <em>Fièrement propulsé par GestUrg2 🚀</em>
+        </p>
+      </td>
+    </tr>
+  </table>
 </body>
-</html>
-`;
+</html>`;
+
 
 
 const emailText = `
