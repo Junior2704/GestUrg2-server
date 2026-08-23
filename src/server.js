@@ -6,7 +6,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import mailRouter from "./routes/mail.js";
 const app = express();
-
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
 // ==============================
