@@ -945,29 +945,12 @@ router.get(
 
 router.get(
     "/documents",
+    verifierSessionPatient,
     async (req, res) => {
 
         try {
 
-            const session =
-                await recupererSessionPatient(req);
-
-
-            if (!session) {
-
-                return res.status(401).json({
-                    success: false,
-                    error:
-                        "Aucune session patient"
-                });
-
-            }
-
-
-            // ==================================================
-            // RÉCUPÉRER UNIQUEMENT LES DOCUMENTS
-            // DE L'HOSPITALISATION DE LA SESSION
-            // ==================================================
+            const session = req.patientSession;
 
             const documentsSnap =
                 await adminDb
@@ -979,20 +962,14 @@ router.get(
                     )
                     .get();
 
-
             const documents =
                 documentsSnap.docs.map(doc => {
 
-                    const data =
-                        doc.data();
+                    const data = doc.data();
 
                     return {
+                        id: doc.id,
 
-                        id:
-                            doc.id,
-
-                        // On retourne uniquement
-                        // les informations nécessaires
                         type:
                             data.type || "",
 
@@ -1003,13 +980,10 @@ router.get(
                             "Document",
 
                         dateCreation:
-                            data.dateCreation ||
-                            null
-
+                            data.dateCreation || null
                     };
 
                 });
-
 
             return res.json({
 
@@ -1039,131 +1013,22 @@ router.get(
 
     }
 );
-
-
 // ======================================================
 // RÉCUPÉRER UN DOCUMENT PRÉCIS
 // ======================================================
-
 router.get(
     "/documents/:documentId",
+    verifierSessionPatient,
     async (req, res) => {
 
         try {
 
             const session =
-                await recupererSessionPatient(req);
-
-
-            if (!session) {
-
-                return res.status(401).json({
-                    success: false,
-                    error:
-                        "Aucune session patient"
-                });
-
-            }
-
+                req.patientSession;
 
             const {
                 documentId
             } = req.params;
-
-
-            if (!documentId) {
-
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Identifiant du document manquant"
-                });
-
-            }
-
-
-            // ==================================================
-            // RÉCUPÉRER LE DOCUMENT
-            // ==================================================
-
-            const documentSnap =
-                await adminDb
-                    .collection("documents")
-                    .doc(documentId)
-                    .get();
-
-
-            if (!documentSnap.exists) {
-
-                return res.status(404).json({
-                    success: false,
-                    error:
-                        "Document introuvable"
-                });
-
-            }
-
-
-            const document =
-                documentSnap.data();
-
-
-            // ==================================================
-            // VÉRIFICATION CRITIQUE
-            // ==================================================
-
-            if (
-                document?.ord?.hospitalisationId !==
-                session.hospitalisationId
-            ) {
-
-                return res.status(403).json({
-                    success: false,
-                    error:
-                        "Accès interdit à ce document"
-                });
-
-            }
-
-
-            // ==================================================
-            // RÉPONSE
-            // ==================================================
-
-            return res.json({
-
-                success: true,
-
-                document: {
-
-                    id:
-                        documentSnap.id,
-
-                    ...document
-
-                }
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Erreur récupération document patient :",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                error:
-                    "Impossible de récupérer le document"
-            });
-
-        }
-
-    }
-);
-
-
 // ======================================================
 // DÉCONNEXION PATIENT
 // ======================================================
