@@ -1082,16 +1082,27 @@ router.get(
             // RÉPONSE
             // ==================================================
 
-            return res.json({
+          return res.json({
 
-                success: true,
+    success: true,
 
-                document: {
-                    id: documentSnap.id,
-                    ...document
-                }
+    document: {
 
-            });
+        id:
+            documentSnap.id,
+
+        type:
+            document.type || "",
+
+        dateCreation:
+            document.dateCreation || null,
+
+        ord:
+            document.ord || null
+
+    }
+
+});
 
         } catch (error) {
 
