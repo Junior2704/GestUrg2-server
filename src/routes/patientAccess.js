@@ -422,7 +422,7 @@ Les avis sont entièrement anonymisés et nous permettent d'améliorer la qualit
         <hr style="border:none; border-top:1px solid #e0e0e0; margin:30px 0;">
         <p style="font-size:13px; color:#999; text-align:center;">
           Service des Urgences<br>
-          <em>Cet e-mail a été généré automatiquement, merci de ne pas y répondre.</em>
+          <em>Cet e-mail a été généré automatiquement, merci de ne pas y répondre.</em><br>
 		  <em>Fièrement propulsé par GestUrg2 🚀</em>
         </p>
       </td>
