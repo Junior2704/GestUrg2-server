@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { adminDb } from "../firebaseAdmin.js";
 import { verifierFirebaseToken } from "../middleware/authFirebase.js";
 import { verifierMedecin } from "../middleware/verifierMedecin.js";
+import { verifierSessionPatient } from "../middleware/verifierSessionPatient.js";
 
 const router = express.Router();
 
@@ -1243,6 +1244,35 @@ router.post(
 
     }
 );
+// ======================================================
+// TEST SESSION PATIENT PROTÉGÉE
+// ======================================================
 
+import { verifierSessionPatient } from "../middleware/verifierSessionPatient.js";
+
+router.get(
+    "/protected-test",
+    verifierSessionPatient,
+    async (req, res) => {
+
+        return res.json({
+
+            success: true,
+
+            message: "Session patient valide",
+
+            patientId:
+                req.patientSession.patientId,
+
+            hospitalisationId:
+                req.patientSession.hospitalisationId,
+
+            accessId:
+                req.patientSession.accessId
+
+        });
+
+    }
+);
 
 export default router;
