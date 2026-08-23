@@ -1016,6 +1016,7 @@ router.get(
 // ======================================================
 // RÉCUPÉRER UN DOCUMENT PRÉCIS
 // ======================================================
+
 router.get(
     "/documents/:documentId",
     verifierSessionPatient,
@@ -1023,12 +1024,94 @@ router.get(
 
         try {
 
-            const session =
-                req.patientSession;
+            const session = req.patientSession;
 
-            const {
-                documentId
-            } = req.params;
+            const { documentId } = req.params;
+
+            // ==================================================
+            // VALIDATION
+            // ==================================================
+
+            if (!documentId) {
+
+                return res.status(400).json({
+                    success: false,
+                    error: "Identifiant du document manquant"
+                });
+
+            }
+
+            // ==================================================
+            // RÉCUPÉRER LE DOCUMENT
+            // ==================================================
+
+            const documentSnap =
+                await adminDb
+                    .collection("documents")
+                    .doc(documentId)
+                    .get();
+
+            if (!documentSnap.exists) {
+
+                return res.status(404).json({
+                    success: false,
+                    error: "Document introuvable"
+                });
+
+            }
+
+            const document = documentSnap.data();
+
+            // ==================================================
+            // VÉRIFICATION CRITIQUE
+            // ==================================================
+
+            if (
+                document?.ord?.hospitalisationId !==
+                session.hospitalisationId
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    error: "Accès interdit à ce document"
+                });
+
+            }
+
+            // ==================================================
+            // RÉPONSE
+            // ==================================================
+
+            return res.json({
+
+                success: true,
+
+                document: {
+                    id: documentSnap.id,
+                    ...document
+                }
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur récupération document patient :",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Impossible de récupérer le document"
+            });
+
+        }
+
+    }
+);
+
+
 // ======================================================
 // DÉCONNEXION PATIENT
 // ======================================================
@@ -1042,12 +1125,10 @@ router.post(
             const sessionToken =
                 req.cookies?.gesturg_patient_session;
 
-
             if (sessionToken) {
 
                 const sessionHash =
                     hashToken(sessionToken);
-
 
                 const snapshot =
                     await adminDb
@@ -1059,7 +1140,6 @@ router.post(
                         )
                         .limit(1)
                         .get();
-
 
                 if (!snapshot.empty) {
 
@@ -1073,20 +1153,19 @@ router.post(
 
             }
 
+            // ==================================================
+            // SUPPRIMER LE COOKIE
+            // ==================================================
 
-            // Supprimer cookie
             res.clearCookie(
                 "gesturg_patient_session",
                 {
                     httpOnly: true,
-                    secure:
-                        process.env.NODE_ENV ===
-                        "production",
-                    sameSite: "lax",
+                    secure: true,
+                    sameSite: "none",
                     path: "/"
                 }
             );
-
 
             return res.json({
                 success: true
@@ -1109,10 +1188,11 @@ router.post(
 
     }
 );
+
+
 // ======================================================
 // TEST SESSION PATIENT PROTÉGÉE
 // ======================================================
-
 
 router.get(
     "/protected-test",
@@ -1123,7 +1203,8 @@ router.get(
 
             success: true,
 
-            message: "Session patient valide",
+            message:
+                "Session patient valide",
 
             patientId:
                 req.patientSession.patientId,
@@ -1138,5 +1219,10 @@ router.get(
 
     }
 );
+
+
+// ======================================================
+// EXPORT
+// ======================================================
 
 export default router;
