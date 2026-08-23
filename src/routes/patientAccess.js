@@ -782,26 +782,17 @@ router.post(
             // COOKIE HTTPONLY
             // ==================================================
 
-            res.cookie(
-                "gesturg_patient_session",
-                sessionToken,
-                {
-
-                    httpOnly: true,
-
-                    secure:
-                        process.env.NODE_ENV ===
-                        "production",
-
-                    sameSite: "lax",
-
-                    maxAge:
-                        2 * 60 * 60 * 1000,
-
-                    path: "/"
-
-                }
-            );
+           res.cookie(
+    "gesturg_patient_session",
+    sessionToken,
+    {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 2 * 60 * 60 * 1000,
+        path: "/"
+    }
+);
 
 
             // ==================================================
