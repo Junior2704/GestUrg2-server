@@ -5,6 +5,7 @@ import { adminDb } from "../firebaseAdmin.js";
 import { verifierFirebaseToken } from "../middleware/authFirebase.js";
 import { verifierMedecin } from "../middleware/verifierMedecin.js";
 import { verifierSessionPatient } from "../middleware/verifierSessionPatient.js";
+import { envoyerEmail } from "../services/mailService.js";
 
 const router = express.Router();
 
@@ -333,24 +334,222 @@ router.post(
             // RÉPONSE
             // ==================================================
 
-            return res.json({
+           // ==================================================
+// LIEN PATIENT
+// ==================================================
+const PATIENT_URL = "https://junior2704.github.io/GestUrg2/portail-patient/patient-login.html";
+const lienPatient =
+    `${PATIENT_URL}?token=${encodeURIComponent(token)}`;
 
-                success: true,
 
-                accessId:
-                    accessRef.id,
+// ==================================================
+// EMAIL PATIENT
+// ==================================================
 
-                // TEMPORAIRE
-                // jusqu'à branchement de l'email
-                token,
+const nomPatient =
+    `${patient.prenom || ""} ${patient.nom || ""}`.trim();
 
-                dateExpiration:
-                    dateExpiration.toISOString(),
+const dateExpirationFormatee =
+    dateExpiration.toLocaleDateString(
+        "fr-FR",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        }
+    );
 
-                nombreDocuments:
-                    documentsSnap.size
 
-            });
+const emailHtml = `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+</head>
+
+<body style="
+    margin:0;
+    padding:0;
+    background:#f4f7fa;
+    font-family:Arial,Helvetica,sans-serif;
+">
+
+<div style="
+    max-width:600px;
+    margin:30px auto;
+    background:white;
+    border-radius:16px;
+    padding:30px;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+">
+
+    <div style="text-align:center;margin-bottom:25px;">
+
+        <img
+            src="https://gesturg2.github.io/gesturg2/logog2.png"
+            alt="GestUrg2"
+            style="width:90px;"
+        >
+
+    </div>
+
+    <h1 style="
+        color:#0078d4;
+        text-align:center;
+        margin-bottom:25px;
+    ">
+        Votre espace patient
+    </h1>
+
+    <p>
+        Bonjour <strong>${nomPatient}</strong>,
+    </p>
+
+    <p>
+        Vous avez récemment été hospitalisé au service des Urgences de l'HOPJ.
+    </p>
+<p>
+        Les documents en rapport avec votre hospitalisation sont dès à présent disponibles sur votre espace patient !
+    </p>
+    <p>
+        Vous pouvez les consulter et les télecharger en cliquant sur le bouton ci-dessous.
+    </p>
+
+    <div style="
+        text-align:center;
+        margin:30px 0;
+    ">
+
+        <a
+            href="${lienPatient}"
+            style="
+                display:inline-block;
+                background:#0078d4;
+                color:white;
+                text-decoration:none;
+                padding:14px 24px;
+                border-radius:10px;
+                font-weight:bold;
+            "
+        >
+            Accéder à mon espace patient
+        </a>
+
+    </div>
+
+    <p style="
+        color:#666;
+        font-size:14px;
+        line-height:1.6;
+    ">
+        Pour des raisons de sécurité, lors de l'accès à votre espace patient, nous vous demanderons de vous authentifier à l'aide de votre date de naissance.
+    </p>
+
+    <p style="
+        color:#666;
+        font-size:14px;
+        line-height:1.6;
+    ">
+        Ce lien est valable jusqu'au
+        <strong>${dateExpirationFormatee}</strong>. Passé cette date, il vous sera impossible d'acceder à ces documents. L'hôpital n'est pas en mesure de vous re-donner accès à cet espace.
+    </p>
+
+    <hr style="
+        border:none;
+        border-top:1px solid #ddd;
+        margin:25px 0;
+    ">
+
+    <p style="
+        color:#888;
+        font-size:12px;
+        text-align:center;
+    ">
+	En cas de difficulté, merci de prendre contact avec le sectrétariat des Urgences<br>
+        Cet e-mail a été envoyé automatiquement, merci de ne pas y répondre
+		<br>
+		Fièrement propulsé par GestUrg2 🚀
+    </p>
+
+</div>
+
+</body>
+</html>
+`;
+
+
+const emailText = `
+Bonjour ${nomPatient},
+
+Votre espace patient GestUrg2 est maintenant disponible.
+
+Vous pouvez accéder à vos documents médicaux ici :
+
+${lienPatient}
+
+Pour vous connecter, vous devrez renseigner votre date de naissance.
+
+Ce lien est valable jusqu'au ${dateExpirationFormatee}.
+
+Cet e-mail a été envoyé automatiquement par GestUrg2.
+`;
+
+
+// ==================================================
+// ENVOI
+// ==================================================
+
+let emailEnvoye = false;
+
+try {
+
+    await envoyerEmail({
+
+        to: email,
+
+        subject:
+            "Votre espace patient GestUrg2",
+
+        html:
+            emailHtml,
+
+        text:
+            emailText
+
+    });
+
+    emailEnvoye = true;
+
+} catch (emailError) {
+
+    console.error(
+        "Erreur envoi e-mail patient :",
+        emailError
+    );
+
+}
+
+
+// ==================================================
+// RÉPONSE
+// ==================================================
+
+return res.json({
+
+    success: true,
+
+    accessId:
+        accessRef.id,
+
+    dateExpiration:
+        dateExpiration.toISOString(),
+
+    nombreDocuments:
+        documentsSnap.size,
+
+    emailEnvoye
+
+});
 
         } catch (error) {
 
