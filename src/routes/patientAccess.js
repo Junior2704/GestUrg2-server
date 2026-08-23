@@ -366,7 +366,7 @@ const emailHtml = `
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Vos documents d'hospitalisation</title>
+  <title>Votre dossier d'hospitalisation</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f4f6f9; font-family:'Segoe UI', Roboto, Arial, sans-serif; color:#333;">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px; margin:auto; background:white; border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.08); overflow:hidden;">
@@ -387,10 +387,10 @@ const emailHtml = `
         </p>
 
         <p style="font-size:15px; line-height:1.6; color:#555;">
-          Les documents relatifs à votre récente hospitalisation au sein du service des Urgences de l'HOPJ sont maintenant disponible(s) !
+          Les documents relatifs à votre récente hospitalisation au sein du service des Urgences de l'HOPJ sont maintenant disponibles !
         </p>
   <p style="font-size:15px; line-height:1.6; color:#555;">
-          Rendez-vous sur votre espace patient en cliquant ci-desous :
+          Rendez-vous sur votre espace patient en cliquant ci-dessous :
         </p>
         <div style="text-align:center; margin:30px 0;">
           <a href="${lienPatient}" 
@@ -400,17 +400,20 @@ const emailHtml = `
         </div>
 
         <p style="font-size:15px; line-height:1.6; color:#555;">
-          🚨 Afin de garantir la confidentialité de vos données, ce lien restera actif j'ausqu'au <strong>${dateExpirationFormatee}</strong>.
-          Une fois ce délai passé, il vous sera impossible d'acceder à vos documents, et nous ne pourrons pas vous y donner accès de nouveau.
+          🚨 Afin de garantir la confidentialité de vos données, ce lien restera actif jusqu'au <strong>${dateExpirationFormatee}</strong>.
+          Une fois ce délai passé, il vous sera impossible d'accéder à vos documents, et nous ne pourrons pas vous y donner accès de nouveau.
         </p>
 <br>
   <p style="font-size:15px; line-height:1.6; color:#555;">
-N'hésitez-pas à nous laisser un avis sur la page prévue à cet effet.
+N'hésitez pas à nous laisser un avis sur la page prévue à cet effet.
 Les avis sont entièrement anonymisés et nous permettent d'améliorer la qualité du service de soins que nous proposons.        </p>
- <a href="https://junior2704.github.io/GesUrg2/avis-patient" 
-             style="background-color:#1a73e8; color:white; padding:14px 32px; text-decoration:none; border-radius:8px; font-weight:500; display:inline-block;">
-            Laisser un avis
-          </a>      
+ <div style="text-align:center; margin:30px 0;">
+  <a href="https://junior2704.github.io/GestUrg2/avis-patient" 
+     style="background-color:#1a73e8; color:white; padding:14px 32px; text-decoration:none; border-radius:8px; font-weight:500; display:inline-block;">
+    Laisser un avis
+  </a>
+</div>
+
 	  <p style="font-size:14px; color:#777;">
           Pour toute question, merci de contacter le service des Urgences :
           <a href="mailto:urgences.hopj@gmail.com" style="color:#1a73e8;">urgences.hopj@gmail.com</a>
