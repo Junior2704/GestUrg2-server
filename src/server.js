@@ -5,6 +5,10 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import mailRouter from "./routes/mail.js";
+import firebaseTestRouter from "./routes/firebaseTest.js";
+import authTestRouter from "./routes/authTest.js";
+import patientAccessRouter from "./routes/patientAccess.js";
+import cookieParser from "cookie-parser";
 const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
@@ -16,7 +20,11 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 
 app.use(cors({
-    origin: true,
+    origin: [
+        "https://junior2704.github.io",
+        "http://localhost:3000"
+    ],
+    credentials: true,
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
@@ -24,7 +32,7 @@ app.use(cors({
 app.use(express.json({
     limit: "1mb"
 }));
-
+app.use(cookieParser());
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 100,
@@ -34,7 +42,9 @@ const apiLimiter = rateLimit({
 
 app.use("/api", apiLimiter);
 app.use("/api/mail", verifierApiKey, mailRouter);
-console.log("API_KEY chargée :", process.env.API_KEY);
+app.use("/firebase-test", firebaseTestRouter);
+app.use("/auth-test", authTestRouter);
+app.use("/api/patient-access", patientAccessRouter);
 function verifierApiKey(req, res, next) {
 
     const authorization = req.headers.authorization;
