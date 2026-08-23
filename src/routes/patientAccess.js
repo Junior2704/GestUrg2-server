@@ -403,8 +403,15 @@ const emailHtml = `
           🚨 Afin de garantir la confidentialité de vos données, ce lien restera actif j'ausqu'au <strong>${dateExpirationFormatee}</strong>.
           Une fois ce délai passé, il vous sera impossible d'acceder à vos documents, et nous ne pourrons pas vous y donner accès de nouveau.
         </p>
-
-        <p style="font-size:14px; color:#777;">
+<br>
+  <p style="font-size:15px; line-height:1.6; color:#555;">
+N'hésitez-pas à nous laisser un avis sur la page prévue à cet effet.
+Les avis sont entièrement anonymisés et nous permettent d'améliorer la qualité du service de soins que nous proposons.        </p>
+ <a href="https://junior2704.github.io/GesUrg2/avis-patient" 
+             style="background-color:#1a73e8; color:white; padding:14px 32px; text-decoration:none; border-radius:8px; font-weight:500; display:inline-block;">
+            Laisser un avis
+          </a>      
+	  <p style="font-size:14px; color:#777;">
           Pour toute question, merci de contacter le service des Urgences :
           <a href="mailto:urgences.hopj@gmail.com" style="color:#1a73e8;">urgences.hopj@gmail.com</a>
         </p>
