@@ -1248,7 +1248,6 @@ router.post(
 // TEST SESSION PATIENT PROTÉGÉE
 // ======================================================
 
-import { verifierSessionPatient } from "../middleware/verifierSessionPatient.js";
 
 router.get(
     "/protected-test",
