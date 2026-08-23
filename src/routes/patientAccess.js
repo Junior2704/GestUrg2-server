@@ -502,21 +502,42 @@ Cet e-mail a été envoyé automatiquement par GestUrg2.
 let emailEnvoye = false;
 
 try {
+const emailBrut = patient.email;
 
-    await envoyerEmail({
+if (
+    !emailBrut ||
+    typeof emailBrut !== "string"
+) {
 
-        to: email,
-
-        subject:
-            "Votre espace patient GestUrg2",
-
-        html:
-            emailHtml,
-
-        text:
-            emailText
-
+    return res.status(400).json({
+        success: false,
+        error: "Aucune adresse email valide pour ce patient"
     });
+
+}
+
+// Découper les emails séparés par "//"
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const emails = emailBrut
+    .split("//")
+    .map(e => e.trim())
+    .filter(e => emailRegex.test(e));
+
+if (emails.length === 0) {
+
+    return res.status(400).json({
+        success: false,
+        error: `Aucune adresse email valide trouvée dans "${emailBrut}"`
+    });
+
+}
+  await envoyerEmail({
+    to: emails[0],
+    subject: "Votre espace patient GestUrg2",
+    html: emailHtml,
+    text: emailText
+});
 
     emailEnvoye = true;
 
