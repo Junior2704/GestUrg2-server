@@ -206,6 +206,29 @@ router.post(
 
             }
 
+// ==================================================
+// RÉCUPÉRER L'HOSPITALISATION
+// ==================================================
+
+const hospitalisationRef = adminDb
+    .collection("hospitalisations")
+    .doc(hospitalisationId);
+
+const hospitalisationSnap =
+    await hospitalisationRef.get();
+
+if (!hospitalisationSnap.exists) {
+
+    return res.status(404).json({
+        success: false,
+        error: "Hospitalisation introuvable"
+    });
+
+}
+
+const hospitalisation =
+    hospitalisationSnap.data();
+	
 
             // ==================================================
             // VÉRIFIER HOSPITALISATION ACTIVE
@@ -358,7 +381,49 @@ const dateExpirationFormatee =
             year: "numeric"
         }
     );
+// ==================================================
+// DATES DE L'HOSPITALISATION
+// ==================================================
 
+const dateDebutHospitalisation =
+    convertirDate(
+        hospitalisation.dateEntree ||
+        hospitalisation.dateDebut ||
+        hospitalisation.dateCreation
+    );
+
+const dateFinHospitalisation =
+    convertirDate(
+        hospitalisation.dateSortie ||
+        hospitalisation.dateFin ||
+        new Date()
+    );
+
+function formaterDateHospitalisation(date) {
+
+    if (!date) {
+        return "Date non renseignée";
+    }
+
+    return date.toLocaleDateString(
+        "fr-FR",
+        {
+            day: "2-digit",
+            month: "long",
+            year: "numeric"
+        }
+    );
+}
+
+const dateDebutHospitalisationFormatee =
+    formaterDateHospitalisation(
+        dateDebutHospitalisation
+    );
+
+const dateFinHospitalisationFormatee =
+    formaterDateHospitalisation(
+        dateFinHospitalisation
+    );
 
 const emailHtml = `
 
@@ -374,7 +439,7 @@ const emailHtml = `
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Votre espace patient — GestUrg2</title>
+    <title>Votre dossier d'hospitalisation — GestUrg2</title>
 
 </head>
 
@@ -540,15 +605,74 @@ const emailHtml = `
 
 <p
     style="
-        margin:0 0 16px;
+        margin:0 0 18px;
         color:#4C6B66;
         font-size:15px;
         line-height:1.7;
     "
 >
-    Les documents relatifs à votre récente hospitalisation au sein
-    du service des Urgences sont maintenant disponibles.
+    Les documents relatifs à votre récente hospitalisation
+    au sein du service des Urgences sont maintenant disponibles
+    dans votre espace patient sécurisé.
 </p>
+
+
+<!-- ============================================================
+     DATES D'HOSPITALISATION
+============================================================ -->
+
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        margin:0 0 25px;
+    "
+>
+
+<tr>
+
+<td
+    style="
+        background-color:#F3F9F8;
+        border:1px solid #E2EEEC;
+        border-radius:15px;
+        padding:17px 18px;
+    "
+>
+
+    <p
+        style="
+            margin:0 0 7px;
+            color:#6A8580;
+            font-size:11px;
+            font-weight:700;
+            letter-spacing:.06em;
+            text-transform:uppercase;
+        "
+    >
+        Votre hospitalisation
+    </p>
+
+    <p
+        style="
+            margin:0;
+            color:#12312D;
+            font-size:15px;
+            line-height:1.6;
+            font-weight:600;
+        "
+    >
+        📅 Du ${dateDebutHospitalisationFormatee}
+        au ${dateFinHospitalisationFormatee}
+    </p>
+
+</td>
+
+</tr>
+
+</table>
 
 
 <p
@@ -559,8 +683,8 @@ const emailHtml = `
         line-height:1.7;
     "
 >
-    Vous pouvez les consulter directement depuis votre espace patient
-    sécurisé en cliquant sur le bouton ci-dessous.
+    Vous pouvez consulter vos documents directement depuis
+    votre espace patient en cliquant sur le bouton ci-dessous.
 </p>
 
 
@@ -604,7 +728,7 @@ const emailHtml = `
 
 
 <!-- ============================================================
-     SÉCURITÉ
+     CONSERVATION DES DOCUMENTS
 ============================================================ -->
 
 <table
@@ -614,6 +738,63 @@ const emailHtml = `
     border="0"
     style="
         margin-top:28px;
+    "
+>
+
+<tr>
+
+<td
+    style="
+        background-color:#F3F9F8;
+        border:1px solid #DCEBE8;
+        border-radius:16px;
+        padding:19px 20px;
+    "
+>
+
+    <p
+        style="
+            margin:0 0 8px;
+            color:#0B544E;
+            font-size:15px;
+            font-weight:700;
+        "
+    >
+        📁 Conservez vos documents
+    </p>
+
+    <p
+        style="
+            margin:0;
+            color:#4C6B66;
+            font-size:13px;
+            line-height:1.7;
+        "
+    >
+        Nous vous recommandons de conserver ces documents
+        pour votre suivi médical et de les présenter à votre
+        médecin traitant ou à tout professionnel de santé
+        qui en aurait besoin.
+    </p>
+
+</td>
+
+</tr>
+
+</table>
+
+
+<!-- ============================================================
+     SÉCURITÉ
+============================================================ -->
+
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        margin-top:20px;
     "
 >
 
@@ -650,15 +831,72 @@ const emailHtml = `
 
 <p
     style="
-        margin:20px 0 0;
+        margin:16px 0 0;
         color:#4C6B66;
         font-size:13px;
         line-height:1.6;
     "
 >
-    Une fois ce délai passé, l'accès à vos documents ne sera plus
-    possible via ce lien.
+    Pour accéder à votre dossier, votre date de naissance
+    vous sera demandée afin de vérifier votre identité.
 </p>
+
+
+<!-- ============================================================
+     APRÈS L'HOSPITALISATION
+============================================================ -->
+
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        margin-top:28px;
+    "
+>
+
+<tr>
+
+<td
+    style="
+        background-color:#FFF9F5;
+        border:1px solid #F3E5DA;
+        border-radius:16px;
+        padding:19px 20px;
+    "
+>
+
+    <p
+        style="
+            margin:0 0 8px;
+            color:#12312D;
+            font-size:15px;
+            font-weight:700;
+        "
+    >
+        🏥 Après votre hospitalisation
+    </p>
+
+    <p
+        style="
+            margin:0;
+            color:#4C6B66;
+            font-size:13px;
+            line-height:1.7;
+        "
+    >
+        Si votre état de santé s'aggrave ou si de nouveaux
+        symptômes apparaissent, contactez un professionnel
+        de santé ou les services d'urgence adaptés à votre
+        situation.
+    </p>
+
+</td>
+
+</tr>
+
+</table>
 
 
 <!-- ============================================================
@@ -671,7 +909,7 @@ const emailHtml = `
     cellspacing="0"
     border="0"
     style="
-        margin-top:30px;
+        margin-top:28px;
     "
 >
 
@@ -679,52 +917,51 @@ const emailHtml = `
 
 <td
     style="
-        background-color:#FFF7F5;
-        border:1px solid #FDE4DF;
+        background-color:#F8FBFA;
+        border:1px solid #E2EEEC;
         border-radius:16px;
-        padding:20px;
+        padding:18px 20px;
     "
 >
 
-    <h3
+    <p
         style="
-            margin:0 0 8px;
+            margin:0 0 7px;
             color:#12312D;
-            font-size:17px;
+            font-size:14px;
             font-weight:700;
         "
     >
-        Votre avis compte 💚
-    </h3>
+        Votre avis nous intéresse
+    </p>
 
     <p
         style="
-            margin:0 0 17px;
-            color:#4C6B66;
-            font-size:13px;
-            line-height:1.65;
+            margin:0 0 14px;
+            color:#6A8580;
+            font-size:12px;
+            line-height:1.6;
         "
     >
-        Votre expérience nous aide à améliorer continuellement
-        la qualité de notre prise en charge.
-        Les avis sont entièrement anonymisés.
+        Votre retour nous aide à améliorer la qualité de
+        l'accueil et de la prise en charge.
+        Votre avis est entièrement anonymisé.
     </p>
-
 
     <a
         href="https://junior2704.github.io/GestUrg2/avis-patient"
         style="
             display:inline-block;
-            background-color:#EF6351;
-            color:#FFFFFF;
+            background-color:#E9F3F1;
+            color:#0F766E;
             text-decoration:none;
-            padding:12px 22px;
-            border-radius:12px;
-            font-size:13px;
+            padding:9px 16px;
+            border-radius:10px;
+            font-size:12px;
             font-weight:700;
         "
     >
-        Laisser mon avis →
+        Donner mon avis →
     </a>
 
 </td>
@@ -746,8 +983,8 @@ const emailHtml = `
         line-height:1.6;
     "
 >
-    Pour toute question, vous pouvez contacter le service
-    des Urgences :
+    Pour toute question concernant votre dossier ou vos documents,
+    vous pouvez contacter le service des Urgences :
     <br>
 
     <a
@@ -810,17 +1047,14 @@ const emailHtml = `
 
     Service des Urgences
     <br>
-
+ <strong style="color:#0F766E;">
+        Fièrement propulsé par GestUrg2 🚀
+    </strong>
+	<br>
     <span style="color:#8AA19D;">
         Cet e-mail a été généré automatiquement,
         merci de ne pas y répondre.
     </span>
-
-    <br>
-
-    <strong style="color:#0F766E;">
-        Fièrement propulsé par GestUrg2 🚀
-    </strong>
 
 </p>
 
