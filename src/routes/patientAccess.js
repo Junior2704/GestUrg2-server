@@ -1083,30 +1083,56 @@ const emailHtml = `
 const emailText = `
 Bonjour ${nomPatient},
 
-Votre espace patient GestUrg2 est maintenant disponible.
+Votre dossier d'hospitalisation au sein du service des Urgences est maintenant disponible dans votre espace patient sécurisé.
 
-Les documents relatifs à votre récente hospitalisation sont disponibles dans votre espace patient.
+VOTRE HOSPITALISATION
 
-Vous pouvez y accéder ici :
+Du ${dateDebutHospitalisationFormatee}
+au ${dateFinHospitalisationFormatee}
+
+
+ACCÉDER À VOTRE ESPACE PATIENT
 
 ${lienPatient}
 
-Pour vous connecter, vous devrez renseigner la date de naissance du patient.
+Pour accéder à votre dossier, votre date de naissance vous sera demandée afin de vérifier votre identité.
+
+
+CONSERVEZ VOS DOCUMENTS
+
+Nous vous recommandons de conserver ces documents pour votre suivi médical et de les présenter à votre médecin traitant ou à tout professionnel de santé qui en aurait besoin.
+
+
+SÉCURITÉ
 
 Pour des raisons de sécurité, ce lien restera actif jusqu'au ${dateExpirationFormatee}.
 
 Une fois ce délai passé, l'accès à vos documents ne sera plus possible via ce lien.
 
+
+APRÈS VOTRE HOSPITALISATION
+
+Si votre état de santé s'aggrave ou si de nouveaux symptômes apparaissent, contactez un professionnel de santé ou les services d'urgence adaptés à votre situation.
+
+
+VOTRE AVIS
+
 Vous pouvez également nous laisser un avis, de manière entièrement anonymisée :
 
 https://junior2704.github.io/GestUrg2/avis-patient
 
-Pour toute question, vous pouvez contacter le service des Urgences :
+
+CONTACT
+
+Pour toute question concernant votre dossier ou vos documents, vous pouvez contacter le service des Urgences :
+
 urgences.hopj@gmail.com
 
-Cet e-mail a été généré automatiquement.
 
-Fièrement propulsé par GestUrg2 🚀
+Cet e-mail a été généré automatiquement.
+Merci de ne pas y répondre.
+
+Service des Urgences
 `;
 
 
@@ -1116,7 +1142,7 @@ Fièrement propulsé par GestUrg2 🚀
 // ==================================================
 
 let emailEnvoye = false;
-
+let emailsEnvoyes = [];
 try {
 const emailBrut = patient.email;
 
@@ -1139,7 +1165,7 @@ const emails = emailBrut
     .split("//")
     .map(e => e.trim())
     .filter(e => emailRegex.test(e));
-
+emailsEnvoyes = emails;
 if (emails.length === 0) {
 
     return res.status(400).json({
@@ -1149,7 +1175,9 @@ if (emails.length === 0) {
 
 }
   await envoyerEmail({
-    to: emails[0],
+    to: emails.map(email => ({
+        email
+    })),
     subject: "Votre espace patient GestUrg2",
     html: emailHtml,
     text: emailText
@@ -1184,7 +1212,8 @@ return res.json({
     nombreDocuments:
         documentsSnap.size,
 
-    emailEnvoye
+    emailEnvoye,
+	emailsEnvoyes
 
 });
 
