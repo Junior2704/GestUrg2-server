@@ -151,7 +151,6 @@ function verifierApiKey(
 
 app.use(
     "/api/mail",
-    verifierApiKey,
     mailRouter
 );
 
