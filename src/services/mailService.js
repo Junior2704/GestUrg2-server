@@ -17,11 +17,46 @@ export async function envoyerEmail({
     html,
     text
 }) {
-    if (!to || (Array.isArray(to) && to.length === 0)) {
-        throw new Error("Destinataire manquant");
+
+    console.log("📧 Préparation envoi e-mail :", {
+        to,
+        typeTo: typeof to,
+        subject
+    });
+
+    // ================================
+    // NORMALISATION DES DESTINATAIRES
+    // ================================
+
+    let destinataires = [];
+
+    if (Array.isArray(to)) {
+        destinataires = to
+            .flatMap(e => String(e).split("//"))
+            .map(e => e.trim())
+            .filter(Boolean);
+
+    } else if (typeof to === "string") {
+        destinataires = to
+            .split("//")
+            .map(e => e.trim())
+            .filter(Boolean);
+
+    } else if (to) {
+        destinataires = [String(to).trim()].filter(Boolean);
     }
 
-    if (!subject) {
+    // ================================
+    // VÉRIFICATIONS
+    // ================================
+
+    if (destinataires.length === 0) {
+        throw new Error(
+            `Destinataire manquant. Valeur reçue : ${JSON.stringify(to)}`
+        );
+    }
+
+    if (!subject || !subject.trim()) {
         throw new Error("Sujet manquant");
     }
 
@@ -29,16 +64,22 @@ export async function envoyerEmail({
         throw new Error("Contenu de l'e-mail manquant");
     }
 
+    console.log("📧 Destinataires finaux :", destinataires);
+
+    // ================================
+    // ENVOI
+    // ================================
+
     const info = await transporter.sendMail({
         from: process.env.MAIL_FROM,
-        to,
-        subject,
+        to: destinataires.join(", "),
+        subject: subject.trim(),
         text,
         html,
         encoding: "UTF-8"
     });
 
-    console.log("E-mail envoyé :", info.messageId);
+    console.log("✅ E-mail envoyé :", info.messageId);
 
     return {
         messageId: info.messageId

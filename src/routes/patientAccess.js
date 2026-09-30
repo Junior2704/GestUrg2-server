@@ -1174,10 +1174,8 @@ if (emails.length === 0) {
     });
 
 }
-  await envoyerEmail({
-    to: emails.map(email => ({
-        email
-    })),
+ await envoyerEmail({
+    to: emails.join(", "),
     subject: "Votre espace patient GestUrg2",
     html: emailHtml,
     text: emailText

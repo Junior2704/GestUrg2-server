@@ -30,18 +30,6 @@ router.post("/send", async (req, res) => {
         }
 
 
-        /*
-         * Accepte :
-         *
-         * "test@email.fr"
-         *
-         * ou
-         *
-         * [
-         *   "test1@email.fr",
-         *   "test2@email.fr"
-         * ]
-         */
 
         if (Array.isArray(to)) {
 
