@@ -35,17 +35,68 @@ function hashToken(token) {
 // RÉCUPÉRER UNE DATE FIRESTORE
 // ======================================================
 
+
 function convertirDate(date) {
+    if (!date) return null;
 
-    if (!date) {
-        return null;
-    }
-
-    if (date.toDate) {
+    // Timestamp Firestore
+    if (typeof date.toDate === "function") {
         return date.toDate();
     }
 
-    return new Date(date);
+    // Objet Date déjà valide
+    if (date instanceof Date) {
+        return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    // Timestamp numérique (millisecondes)
+    if (typeof date === "number") {
+        const resultat = new Date(date);
+        return Number.isNaN(resultat.getTime()) ? null : resultat;
+    }
+
+    if (typeof date === "string") {
+        const valeur = date.trim();
+
+        // Format français : JJ/MM/AAAA ou JJ/MM/AAAA HH:mm:ss
+        const francaise = valeur.match(
+            /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
+        );
+
+        if (francaise) {
+            const [, jour, mois, annee, heures = "00",
+                minutes = "00", secondes = "00"] = francaise;
+
+            const resultat = new Date(
+                Number(annee),
+                Number(mois) - 1,
+                Number(jour),
+                Number(heures),
+                Number(minutes),
+                Number(secondes)
+            );
+
+            // Refuser les dates invalides
+            if (
+                resultat.getFullYear() !== Number(annee) ||
+                resultat.getMonth() !== Number(mois) - 1 ||
+                resultat.getDate() !== Number(jour)
+            ) {
+                return null;
+            }
+
+            return resultat;
+        }
+
+        // Format ISO ou autre format standard
+        const resultat = new Date(valeur);
+
+        return Number.isNaN(resultat.getTime())
+            ? null
+            : resultat;
+    }
+
+    return null;
 }
 
 
