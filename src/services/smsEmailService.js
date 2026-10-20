@@ -4,11 +4,16 @@ import nodemailer from "nodemailer";
 const gmailUser = process.env.GMAIL_USER;
 const gmailPassword = process.env.GMAIL_APP_PASSWORD;
 
-// Connexion SMTP à Gmail
+import dns from "node:dns";
+
+// Privilégie IPv4 lorsque Node.js résout les adresses réseau.
+dns.setDefaultResultOrder("ipv4first");
+
 const transporteur = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
+    family: 4,
     auth: {
         user: gmailUser,
         pass: gmailPassword
@@ -72,5 +77,6 @@ async function envoyerMailSMSPatient(numero, contenu) {
         messageId: resultat.messageId
     };
 }
+
 
 export { envoyerMailSMSPatient };
