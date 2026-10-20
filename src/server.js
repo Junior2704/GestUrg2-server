@@ -5,7 +5,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
-
+import smsEmailRouter from "./routes/smsEmail.js";
 import mailRouter from "./routes/mail.js";
 import firebaseTestRouter from "./routes/firebaseTest.js";
 import authTestRouter from "./routes/authTest.js";
@@ -94,7 +94,7 @@ app.use(
     apiLimiter
 );
 
-
+app.use("/api", smsEmailRouter);
 // ======================================================
 // API KEY
 // ======================================================
