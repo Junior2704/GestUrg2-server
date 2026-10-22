@@ -10,6 +10,7 @@ import mailRouter from "./routes/mail.js";
 import firebaseTestRouter from "./routes/firebaseTest.js";
 import authTestRouter from "./routes/authTest.js";
 import patientAccessRouter from "./routes/patientAccess.js";
+import rdvConfirmationRouter from "./routes/rdvConfirmation.js";
 
 const app = express();
 
@@ -169,6 +170,10 @@ app.use(
     patientAccessRouter
 );
 
+app.use(
+    "/api/rdv",
+    rdvConfirmationRouter
+);
 
 // ======================================================
 // ROUTE RACINE
