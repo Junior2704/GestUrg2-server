@@ -142,7 +142,21 @@ function construireHTML({ prenom, nom, date, heure, reference }) {
         Conservez cette référence : elle vous sera demandée à l’accueil.
         Merci de vous présenter <strong>10 minutes avant</strong> l’heure de votre rendez-vous.
     </p>
-
+    <!-- ===================== ANNULATION ===================== -->
+    <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:26px auto 0;">
+    <tr>
+    <td align="center" style="border:2px solid #EF6351;border-radius:14px;background-color:#FFFFFF;">
+        <a href="https://junior2704.github.io/GestUrg2/annulerrdv.html"
+           target="_blank"
+           style="display:inline-block;padding:13px 26px;color:#EF6351;font-size:15px;font-weight:700;text-decoration:none;border-radius:14px;">
+            Annuler mon rendez-vous
+        </a>
+    </td>
+    </tr>
+    </table>
+    <p style="margin:10px 0 0;text-align:center;color:#8AA19D;font-size:12px;line-height:1.6;">
+        Vous aurez besoin de votre référence, de l’e-mail et de la date de naissance du patient.
+    </p>
     ${carte({
         fond: "#F3F9F8",
         bordure: "#DCEBE8",
