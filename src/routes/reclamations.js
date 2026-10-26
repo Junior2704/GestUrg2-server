@@ -60,6 +60,29 @@ function verifierDroitReclamations(req, res, next) {
   next();
 }
 
+function normaliserRecherche(value) {
+  return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9@+]/g, "");
+}
+function afficherDatePatient(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (value?.toDate) return value.toDate().toISOString().slice(0, 10);
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value);
+}
+function patientPublic(snap) {
+  const p = snap.data() || {};
+  return {
+    id: snap.id,
+    nom: texte(p.nom || p.Nom, 100),
+    prenom: texte(p.prenom || p.Prénom || p.Prenom, 100),
+    email: texte(p.email || p.mail, 254).toLowerCase(),
+    telephone: texte(p.telephone || p.tel || p.phone || p.numeroTelephone, 40),
+    dateNaissance: afficherDatePatient(p.dateNaissance || p.naissance),
+    sexe: texte(p.sexe || p.Sexe, 20)
+  };
+}
+
 function dossierPublic(d) {
   // Ne jamais exposer les hashes, les notes internes ou les données d'authentification.
   return {
@@ -89,6 +112,13 @@ function dossierPublic(d) {
 function dossierAdmin(d, id) {
   return {
     ...dossierPublic({ ...d, id }),
+    patientId: d.patientId || null,
+    patientNom: d.patientNom || "",
+    patientPrenom: d.patientPrenom || "",
+    patientDateNaissance: d.patientDateNaissance || "",
+    patientEmail: d.patientEmail || "",
+    patientTelephone: d.patientTelephone || "",
+    patientAssociationConfirmee: d.patientAssociationConfirmee === true,
     noteInterne: d.noteInterne || "",
     messages: Array.isArray(d.messages) ? d.messages : []
   };
@@ -320,6 +350,78 @@ router.post("/patient/message", async (req, res) => {
 });
 
 // ======================================================
+// PROFESSIONNELS : suggestions de patients à partir d'une réclamation
+// GET /api/reclamations/patients/suggestions
+// Les informations retournées sont limitées à l'identité nécessaire à la vérification.
+// ======================================================
+router.get("/patients/suggestions", verifierFirebaseToken, verifierMedecin, verifierDroitReclamations, async (req, res) => {
+  try {
+    const criteria = {
+      nom: normaliserRecherche(texte(req.query.nom, 100)),
+      prenom: normaliserRecherche(texte(req.query.prenom, 100)),
+      email: normaliserRecherche(texte(req.query.email, 254)),
+      telephone: normaliserRecherche(texte(req.query.telephone, 40)),
+      q: normaliserRecherche(texte(req.query.q, 200))
+    };
+    if (!Object.values(criteria).some(Boolean)) return res.json({ success: true, patients: [] });
+
+    // Le système n'associe jamais un patient automatiquement : il ne fait que suggérer.
+    const snap = await adminDb.collection("patients").get();
+    const results = [];
+    for (const docSnap of snap.docs) {
+      const p = patientPublic(docSnap);
+      const nom = normaliserRecherche(p.nom);
+      const prenom = normaliserRecherche(p.prenom);
+      const email = normaliserRecherche(p.email);
+      const telephone = normaliserRecherche(p.telephone);
+      let score = 0;
+      const reasons = [];
+
+      if (criteria.email && email && criteria.email === email) { score += 100; reasons.push("e-mail exact"); }
+      if (criteria.telephone && telephone && criteria.telephone === telephone) { score += 95; reasons.push("téléphone exact"); }
+      if (criteria.nom && nom && criteria.nom === nom) { score += 35; reasons.push("nom exact"); }
+      else if (criteria.nom && nom && (nom.includes(criteria.nom) || criteria.nom.includes(nom))) { score += 18; reasons.push("nom proche"); }
+      if (criteria.prenom && prenom && criteria.prenom === prenom) { score += 35; reasons.push("prénom exact"); }
+      else if (criteria.prenom && prenom && (prenom.includes(criteria.prenom) || criteria.prenom.includes(prenom))) { score += 18; reasons.push("prénom proche"); }
+      if (criteria.q) {
+        const q = criteria.q;
+        if ([nom, prenom, email, telephone, normaliserRecherche(`${p.prenom} ${p.nom}`)].some(v => v && v.includes(q))) {
+          score += 20; reasons.push("recherche manuelle");
+        }
+      }
+      if (score > 0) results.push({ ...p, score: Math.min(99, score), raison: reasons.join(" · "), niveau: score >= 90 ? "Forte" : score >= 50 ? "À vérifier" : "Faible" });
+    }
+    results.sort((a, b) => b.score - a.score || a.nom.localeCompare(b.nom, "fr"));
+    return res.json({ success: true, patients: results.slice(0, 20) });
+  } catch (error) {
+    console.error("Erreur suggestions patients :", error);
+    return erreur(res, 500, "Impossible de rechercher les patients.");
+  }
+});
+
+// ======================================================
+// PROFESSIONNELS : documents liés au patient
+// Ne renvoie jamais pdfBase64 ni le contenu des documents.
+// ======================================================
+router.get("/patients/:patientId/documents", verifierFirebaseToken, verifierMedecin, verifierDroitReclamations, async (req, res) => {
+  try {
+    const patientId = texte(req.params.patientId, 150);
+    if (!patientId) return erreur(res, 400, "Identifiant patient manquant.");
+    const patientSnap = await adminDb.collection("patients").doc(patientId).get();
+    if (!patientSnap.exists) return erreur(res, 404, "Patient introuvable.");
+    const snap = await adminDb.collection("documents").where("patientId", "==", patientId).limit(200).get();
+    const documents = snap.docs.map(d => {
+      const data = d.data() || {};
+      return { id: d.id, type: texte(data.type || data.nom, 180) || "Document", dateCreation: data.dateCreation || null, mime: texte(data.mime, 100), hospitalisationId: texte(data.hospitalisationId, 150) };
+    }).sort((a, b) => String(b.dateCreation || "").localeCompare(String(a.dateCreation || "")));
+    return res.json({ success: true, documents });
+  } catch (error) {
+    console.error("Erreur documents patient réclamation :", error);
+    return erreur(res, 500, "Impossible de charger les documents du patient.");
+  }
+});
+
+// ======================================================
 // PROFESSIONNELS : liste des réclamations
 // GET /api/reclamations
 // Auth Firebase + medecin + pages.reclamations
@@ -369,12 +471,20 @@ router.patch("/:id", verifierFirebaseToken, verifierMedecin, verifierDroitReclam
     const categorie = texte(body.categorie, 100);
     const noteInterne = texte(body.noteInterne, 5000);
     const reponseUsager = texte(body.reponseUsager, 5000);
+    const patientIdPresent = Object.prototype.hasOwnProperty.call(body, "patientId");
+    const patientId = patientIdPresent && body.patientId != null ? texte(body.patientId, 150) : null;
 
     if (!STATUTS.has(statut)) return erreur(res, 400, "Statut non valide.");
     if (!PRIORITES.has(priorite)) return erreur(res, 400, "Priorité non valide.");
     if (!CATEGORIES.has(categorie)) return erreur(res, 400, "Catégorie non valide.");
 
     const before = snap.data();
+    let patientAssocie = null;
+    if (patientIdPresent && patientId) {
+      const patientSnap = await adminDb.collection("patients").doc(patientId).get();
+      if (!patientSnap.exists) return erreur(res, 400, "Le patient sélectionné n’existe plus.");
+      patientAssocie = patientPublic(patientSnap);
+    }
     const now = new Date().toISOString();
     const historique = Array.isArray(before.historique) ? before.historique : [];
     const changementStatut = before.statut !== statut;
@@ -383,6 +493,9 @@ router.patch("/:id", verifierFirebaseToken, verifierMedecin, verifierDroitReclam
     if (changementStatut) changements.push(`Statut modifié : ${before.statut || "nouvelle"} → ${statut}.`);
     if ((before.priorite || "normale") !== priorite) changements.push(`Priorité modifiée : ${priorite}.`);
     if ((before.assigneA || "") !== assigneA) changements.push(assigneA ? `Dossier attribué à : ${assigneA}.` : "Attribution du dossier retirée.");
+    if (patientIdPresent && (before.patientId || null) !== patientId) {
+      changements.push(patientId ? `Patient associé confirmé : ${[patientAssocie?.prenom, patientAssocie?.nom].filter(Boolean).join(" ") || patientId} (ID ${patientId}).` : "Association avec le patient retirée.");
+    }
 
     if (changements.length) {
       historique.push({
@@ -408,7 +521,7 @@ router.patch("/:id", verifierFirebaseToken, verifierMedecin, verifierDroitReclam
       });
     }
 
-    await ref.update({
+    const updateData = {
       statut,
       priorite,
       assigneA,
@@ -418,7 +531,17 @@ router.patch("/:id", verifierFirebaseToken, verifierMedecin, verifierDroitReclam
       messages,
       dateModification: now,
       derniereModificationPar: req.firebaseUser.uid
-    });
+    };
+    if (patientIdPresent) {
+      updateData.patientId = patientId || null;
+      updateData.patientAssociationConfirmee = Boolean(patientId && patientAssocie);
+      updateData.patientNom = patientAssocie?.nom || "";
+      updateData.patientPrenom = patientAssocie?.prenom || "";
+      updateData.patientDateNaissance = patientAssocie?.dateNaissance || "";
+      updateData.patientEmail = patientAssocie?.email || "";
+      updateData.patientTelephone = patientAssocie?.telephone || "";
+    }
+    await ref.update(updateData);
 
     const updatedSnap = await ref.get();
     return res.json({
