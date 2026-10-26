@@ -26,14 +26,11 @@ const PORT =
 // ======================================================
 
 app.use(helmet());
-
-
 // ======================================================
 // CORS
 // ======================================================
 
 app.use(cors({
-
     origin: [
         "https://junior2704.github.io",
         "http://localhost:3000"
@@ -43,7 +40,11 @@ app.use(cors({
 
     methods: [
         "GET",
+        "HEAD",
         "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
         "OPTIONS"
     ],
 
@@ -51,7 +52,6 @@ app.use(cors({
         "Content-Type",
         "Authorization"
     ]
-
 }));
 
 
