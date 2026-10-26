@@ -148,6 +148,15 @@ async function recupererSessionPatient(req) {
         return null;
     }
 
+    // Un lien d’accès révoqué ne doit pas laisser vivre une session déjà ouverte.
+    if (session.accessId) {
+        const accessSnap = await adminDb.collection("accesPatients").doc(session.accessId).get();
+        if (!accessSnap.exists) return null;
+        const access = accessSnap.data() || {};
+        const accessExpiry = convertirDate(access.dateExpiration);
+        if (access.actif !== true || !accessExpiry || accessExpiry.getTime() <= Date.now()) return null;
+    }
+
     return session;
 }
 
@@ -1865,39 +1874,26 @@ router.get(
         try {
 
             const session = req.patientSession;
-
-            const documentsSnap =
-                await adminDb
-                    .collection("documents")
-                    .where(
-                        "ord.hospitalisationId",
-                        "==",
-                        session.hospitalisationId
-                    )
-                    .get();
-
-            const documents =
-                documentsSnap.docs.map(doc => {
-
-                    const data = doc.data();
-
-                    return {
-                        id: doc.id,
-
-                        type:
-                            data.type || "",
-
-                        titre:
-                            data.titre ||
-                            data.nom ||
-                            data.type ||
-                            "Document",
-
-                        dateCreation:
-                            data.dateCreation || null
-                    };
-
-                });
+            const accessSnap = await adminDb.collection("accesPatients").doc(session.accessId).get();
+            if (!accessSnap.exists) return res.status(401).json({success:false,error:"Accès patient introuvable"});
+            const access = accessSnap.data() || {};
+            let documentSnaps = [];
+            if (access.type === "reclamation_document" && Array.isArray(access.documentsIds)) {
+                const refs = await Promise.all(access.documentsIds.slice(0, 20).map(id => adminDb.collection("documents").doc(id).get()));
+                documentSnaps = refs.filter(d => d.exists && (d.data()?.patientId === session.patientId || d.data()?.ord?.hospitalisationId === session.hospitalisationId));
+            } else {
+                const documentsSnap = await adminDb.collection("documents").where("ord.hospitalisationId", "==", session.hospitalisationId).get();
+                documentSnaps = documentsSnap.docs;
+            }
+            const documents = documentSnaps.map(doc => {
+                const data = doc.data() || {};
+                return {
+                    id: doc.id,
+                    type: data.type || "",
+                    titre: data.titre || data.nom || data.type || "Document",
+                    dateCreation: data.dateCreation || null
+                };
+            });
 
             return res.json({
 
@@ -1980,16 +1976,14 @@ router.get(
             // VÉRIFICATION CRITIQUE
             // ==================================================
 
-            if (
-                document?.ord?.hospitalisationId !==
-                session.hospitalisationId
-            ) {
-
-                return res.status(403).json({
-                    success: false,
-                    error: "Accès interdit à ce document"
-                });
-
+            const accessSnap = await adminDb.collection("accesPatients").doc(session.accessId).get();
+            if (!accessSnap.exists) return res.status(401).json({success:false,error:"Accès patient introuvable"});
+            const access = accessSnap.data() || {};
+            const documentAutorise = access.type === "reclamation_document"
+                ? Array.isArray(access.documentsIds) && access.documentsIds.includes(documentId) && (document?.patientId === session.patientId || (access.hospitalisationId && document?.ord?.hospitalisationId === access.hospitalisationId))
+                : document?.ord?.hospitalisationId === session.hospitalisationId;
+            if (!documentAutorise) {
+                return res.status(403).json({success:false,error:"Accès interdit à ce document"});
             }
 
             // ==================================================

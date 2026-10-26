@@ -4,6 +4,7 @@ import { adminDb } from "../firebaseAdmin.js";
 import { verifierFirebaseToken } from "../middleware/authFirebase.js";
 import { verifierMedecin } from "../middleware/verifierMedecin.js";
 
+
 const router = express.Router();
 
 const COLLECTION = "reclamations";
@@ -120,6 +121,7 @@ function dossierAdmin(d, id) {
     patientTelephone: d.patientTelephone || "",
     patientAssociationConfirmee: d.patientAssociationConfirmee === true,
     noteInterne: d.noteInterne || "",
+    echeance: d.echeance || null,
     messages: Array.isArray(d.messages) ? d.messages : []
   };
 }
@@ -410,14 +412,295 @@ router.get("/patients/:patientId/documents", verifierFirebaseToken, verifierMede
     const patientSnap = await adminDb.collection("patients").doc(patientId).get();
     if (!patientSnap.exists) return erreur(res, 404, "Patient introuvable.");
     const snap = await adminDb.collection("documents").where("patientId", "==", patientId).limit(200).get();
+    const reclamationId = texte(req.query.reclamationId, 150);
+    const sharesSnap = await adminDb.collection("accesPatients").where("patientId", "==", patientId).get();
+    const shares = sharesSnap.docs.map(d => ({id:d.id, ...(d.data() || {})})).filter(a => a.type === "reclamation_document" && a.reclamationId === reclamationId);
     const documents = snap.docs.map(d => {
       const data = d.data() || {};
-      return { id: d.id, type: texte(data.type || data.nom, 180) || "Document", dateCreation: data.dateCreation || null, mime: texte(data.mime, 100), hospitalisationId: texte(data.hospitalisationId, 150) };
+      const share = shares.filter(a => a.documentId === d.id).sort((a,b) => new Date(b.dateCreation || 0) - new Date(a.dateCreation || 0))[0];
+      return { id: d.id, type: texte(data.type || data.nom, 180) || "Document", dateCreation: data.dateCreation || null, mime: texte(data.mime, 100), hospitalisationId: texte(data.hospitalisationId, 150), partage: share ? {id:share.id, actif:share.actif === true, dateExpiration:share.dateExpiration || null} : null };
     }).sort((a, b) => String(b.dateCreation || "").localeCompare(String(a.dateCreation || "")));
     return res.json({ success: true, documents });
   } catch (error) {
     console.error("Erreur documents patient réclamation :", error);
     return erreur(res, 500, "Impossible de charger les documents du patient.");
+  }
+});
+
+
+/**
+ * PARTAGER UN DOCUMENT DANS LE CHAT SÉCURISÉ DE LA RÉCLAMATION
+ *
+ * POST /api/reclamations/:id/documents/:documentId/share
+ *
+ * Aucun e-mail n'est envoyé.
+ * Le lien temporaire est publié dans les messages de la réclamation.
+ */
+router.post(
+  "/:id/documents/:documentId/share",
+  verifierFirebaseToken,
+  verifierMedecin,
+  verifierDroitReclamations,
+  async (req, res) => {
+    let accessRef = null;
+
+    try {
+      const reclamationId = texte(req.params.id, 150);
+      const documentId = texte(req.params.documentId, 150);
+
+      if (!reclamationId || !documentId) {
+        return erreur(res, 400, "Réclamation ou document manquant.");
+      }
+
+      // 1. Vérifier la réclamation
+      const reclamationSnap = await adminDb
+        .collection(COLLECTION)
+        .doc(reclamationId)
+        .get();
+
+      if (!reclamationSnap.exists) {
+        return erreur(res, 404, "Réclamation introuvable.");
+      }
+
+      const reclamation = reclamationSnap.data() || {};
+
+      if (
+        !reclamation.patientId ||
+        reclamation.patientAssociationConfirmee !== true
+      ) {
+        return erreur(
+          res,
+          409,
+          "Associez et confirmez le patient avant de partager un document."
+        );
+      }
+
+      // 2. Vérifier le patient
+      const patientSnap = await adminDb
+        .collection("patients")
+        .doc(reclamation.patientId)
+        .get();
+
+      if (!patientSnap.exists) {
+        return erreur(res, 404, "Patient introuvable.");
+      }
+
+      const patient = patientSnap.data() || {};
+
+      // 3. Vérifier le document
+      const documentSnap = await adminDb
+        .collection("documents")
+        .doc(documentId)
+        .get();
+
+      if (!documentSnap.exists) {
+        return erreur(res, 404, "Document introuvable.");
+      }
+
+      const document = documentSnap.data() || {};
+
+      const hospitalisationId =
+        texte(
+          document.hospitalisationId ||
+          document.ord?.hospitalisationId,
+          150
+        ) || null;
+
+      const appartientAuPatient =
+        document.patientId === reclamation.patientId ||
+        (
+          !document.patientId &&
+          hospitalisationId &&
+          (
+            (
+              Array.isArray(patient.hospitalisations) &&
+              patient.hospitalisations.includes(hospitalisationId)
+            ) ||
+            patient.hospitalisationActiveId === hospitalisationId
+          )
+        );
+
+      if (!appartientAuPatient) {
+        return erreur(
+          res,
+          403,
+          "Ce document n'est pas rattaché au patient associé à la réclamation."
+        );
+      }
+
+      // 4. Créer un lien temporaire aléatoire
+      const token = crypto.randomBytes(32).toString("hex");
+      const tokenHash = hash(token);
+
+      const now = new Date();
+      const dateExpiration = new Date(
+        now.getTime() + SESSION_DURATION_MS
+      );
+
+      const nomDocument =
+        texte(document.type || document.titre || document.nom, 180) ||
+        "Document";
+
+      const nomProfessionnel =
+        texte(
+          req.medecin?.prenom && req.medecin?.nom
+            ? `${req.medecin.prenom} ${req.medecin.nom}`
+            : req.medecin?.nom,
+          150
+        ) || "Établissement";
+
+      // 5. Enregistrer les droits d'accès au document
+      accessRef = adminDb.collection("accesPatients").doc();
+
+      await accessRef.set({
+        patientId: reclamation.patientId,
+        hospitalisationId,
+        tokenHash,
+
+        // Conservé à titre informatif ; aucun e-mail n'est envoyé.
+        email: texte(
+          patient.email ||
+          patient.mail ||
+          reclamation.patientEmail ||
+          reclamation.email,
+          254
+        ).toLowerCase(),
+
+        dateCreation: now,
+        dateExpiration,
+        actif: true,
+        dateDerniereConnexion: null,
+
+        documentsIds: [documentId],
+        type: "reclamation_document",
+        reclamationId,
+        documentId,
+
+        creePar: req.firebaseUser?.uid || null
+      });
+
+      // 6. Construire le lien du portail patient
+      const portalUrl =
+        "https://junior2704.github.io/GestUrg2/portail-patient/patient-login.html";
+
+      const lien =
+        `${portalUrl}?token=${encodeURIComponent(token)}`;
+
+      const expirationFr = dateExpiration.toLocaleDateString(
+        "fr-FR",
+        {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        }
+      );
+
+      // 7. Publier le lien dans le chat de la réclamation
+      const messages = Array.isArray(reclamation.messages)
+        ? [...reclamation.messages]
+        : [];
+
+      const messageChat = {
+        auteurType: "professionnel",
+        auteurLibelle: nomProfessionnel,
+        contenu:
+          `Un document vous a été partagé : ${nomDocument}\n\n` +
+          `Accéder au document sécurisé : ${lien}\n\n` +
+          `Ce lien expire le ${expirationFr}. ` +
+          `Il donne accès uniquement au document partagé.`,
+        date: now.toISOString(),
+
+        // Métadonnées utiles à l'interface d'administration
+        type: "document_partage",
+        documentId,
+        accessId: accessRef.id,
+        dateExpiration: dateExpiration.toISOString()
+      };
+
+      messages.push(messageChat);
+
+      const historique = Array.isArray(reclamation.historique)
+        ? [...reclamation.historique]
+        : [];
+
+      historique.push({
+        date: now.toISOString(),
+        titre: "Document partagé dans le chat",
+        description:
+          `Le document « ${nomDocument} » a été partagé ` +
+          `dans la messagerie sécurisée de la réclamation. ` +
+          `Expiration du lien : ${expirationFr}.`
+      });
+
+      await reclamationSnap.ref.update({
+        messages,
+        historique,
+        dateModification: now.toISOString()
+      });
+
+      return res.json({
+        success: true,
+        message: "Le lien du document a été ajouté au chat sécurisé.",
+        accessId: accessRef.id,
+        dateExpiration: dateExpiration.toISOString(),
+        document: {
+          id: documentId,
+          nom: nomDocument
+        },
+        messageChat
+      });
+
+    } catch (error) {
+      console.error(
+        "Erreur partage document dans le chat sécurisé :",
+        error
+      );
+
+      // Ne pas supprimer le droit d'accès si le message a déjà été
+      // enregistré : cela évite de laisser un lien dans le chat qui
+      // ne fonctionnerait plus à cause d'une erreur de réponse.
+      if (accessRef) {
+        try {
+          const accessSnap = await accessRef.get();
+
+          if (accessSnap.exists) {
+            await accessRef.update({
+              actif: false,
+              dateRevocation: new Date(),
+              motifRevocation: "Erreur pendant le partage dans le chat"
+            });
+          }
+        } catch (revokeError) {
+          console.error(
+            "Erreur révocation du partage incomplet :",
+            revokeError
+          );
+        }
+      }
+
+      return erreur(
+        res,
+        500,
+        "Impossible de partager le document dans le chat sécurisé."
+      );
+    }
+  }
+);
+
+// Révoquer un lien de partage existant si son accessId est connu.
+router.delete("/:id/document-shares/:accessId", verifierFirebaseToken, verifierMedecin, verifierDroitReclamations, async (req, res) => {
+  try {
+    const reclamationId = texte(req.params.id, 150);
+    const accessId = texte(req.params.accessId, 150);
+    const snap = await adminDb.collection("accesPatients").doc(accessId).get();
+    if (!snap.exists) return erreur(res, 404, "Lien de partage introuvable.");
+    const access = snap.data() || {};
+    if (access.type !== "reclamation_document" || access.reclamationId !== reclamationId) return erreur(res, 403, "Ce lien ne correspond pas à cette réclamation.");
+    await snap.ref.update({actif:false, dateRevocation:new Date(), revoquePar:req.firebaseUser?.uid || null});
+    return res.json({success:true});
+  } catch (error) {
+    console.error("Erreur révocation lien document :", error);
+    return erreur(res, 500, "Impossible de révoquer le lien.");
   }
 });
 
@@ -470,6 +753,7 @@ router.patch("/:id", verifierFirebaseToken, verifierMedecin, verifierDroitReclam
     const assigneA = texte(body.assigneA, 180);
     const categorie = texte(body.categorie, 100);
     const noteInterne = texte(body.noteInterne, 5000);
+    const echeance = body.echeance == null ? null : texte(body.echeance, 10);
     const reponseUsager = texte(body.reponseUsager, 5000);
     const patientIdPresent = Object.prototype.hasOwnProperty.call(body, "patientId");
     const patientId = patientIdPresent && body.patientId != null ? texte(body.patientId, 150) : null;
@@ -477,6 +761,7 @@ router.patch("/:id", verifierFirebaseToken, verifierMedecin, verifierDroitReclam
     if (!STATUTS.has(statut)) return erreur(res, 400, "Statut non valide.");
     if (!PRIORITES.has(priorite)) return erreur(res, 400, "Priorité non valide.");
     if (!CATEGORIES.has(categorie)) return erreur(res, 400, "Catégorie non valide.");
+    if (echeance && !/^\d{4}-\d{2}-\d{2}$/.test(echeance)) return erreur(res, 400, "Format d’échéance non valide.");
 
     const before = snap.data();
     let patientAssocie = null;
@@ -493,6 +778,7 @@ router.patch("/:id", verifierFirebaseToken, verifierMedecin, verifierDroitReclam
     if (changementStatut) changements.push(`Statut modifié : ${before.statut || "nouvelle"} → ${statut}.`);
     if ((before.priorite || "normale") !== priorite) changements.push(`Priorité modifiée : ${priorite}.`);
     if ((before.assigneA || "") !== assigneA) changements.push(assigneA ? `Dossier attribué à : ${assigneA}.` : "Attribution du dossier retirée.");
+    if ((before.echeance || null) !== echeance) changements.push(echeance ? `Échéance de traitement fixée au ${echeance}.` : "Échéance de traitement retirée.");
     if (patientIdPresent && (before.patientId || null) !== patientId) {
       changements.push(patientId ? `Patient associé confirmé : ${[patientAssocie?.prenom, patientAssocie?.nom].filter(Boolean).join(" ") || patientId} (ID ${patientId}).` : "Association avec le patient retirée.");
     }
@@ -527,6 +813,7 @@ router.patch("/:id", verifierFirebaseToken, verifierMedecin, verifierDroitReclam
       assigneA,
       categorie,
       noteInterne,
+      echeance,
       historique,
       messages,
       dateModification: now,
