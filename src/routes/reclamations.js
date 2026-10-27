@@ -127,7 +127,7 @@ function dossierAdmin(d, id) {
     messages: Array.isArray(d.messages) ? d.messages : [],
 	    mailFrom: d.mailFrom || "",
     mailSubject: d.mailSubject || "",
-    mailDate: d.mailDate || null
+    mailDate: d.mailDate || null,
     source: d.source || "",
     accesEnvoyeLe: d.accesEnvoyeLe || null
   };
