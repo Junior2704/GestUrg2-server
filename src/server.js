@@ -12,7 +12,6 @@ import authTestRouter from "./routes/authTest.js";
 import patientAccessRouter from "./routes/patientAccess.js";
 import rdvConfirmationRouter from "./routes/rdvConfirmation.js";
 import reclamationsRouter from "./routes/reclamations.js";
-import reclamationsMail from "./routes/reclamationsMail.js";
 
 const app = express();
 
@@ -176,7 +175,6 @@ app.use(
     "/api/rdv",
     rdvConfirmationRouter
 );
-app.use("/api/reclamations", reclamationsMail({ db, requireStaff }));
 app.use(
     "/api/reclamations",
     reclamationsRouter
