@@ -1044,9 +1044,26 @@ const emailHtml = `
     "
 >
     Pour toute question concernant votre dossier ou vos documents,
-    vous pouvez contacter le service des Urgences :
+    vous pouvez contacter le service des Urgences via le formulaire sécurisé :
     <br>
-
+ <a
+        href="https://junior2704.github.io/GestUrg2/demande"
+        style="
+            display:inline-block;
+            background-color:#E9F3F1;
+            color:#0F766E;
+            text-decoration:none;
+            padding:9px 16px;
+            border-radius:10px;
+            font-size:12px;
+            font-weight:700;
+        "
+    >
+        Formulaire de contact →
+    </a>
+	<br>
+	Ou par email : 
+	<br>
     <a
         href="mailto:urgences.hopj@gmail.com"
         style="
@@ -1182,9 +1199,13 @@ Vous pouvez également nous laisser un avis, de manière entièrement anonymisé
 https://junior2704.github.io/GestUrg2/avis-patient
 
 
-CONTACT
+UNE RECLAMATION ?
 
-Pour toute question concernant votre dossier ou vos documents, vous pouvez contacter le service des Urgences :
+Pour toute question concernant votre dossier ou vos documents, vous pouvez contacter le service des Urgences en remplissant le formulaire de contact:
+
+https://junior2704.github.io/GestUrg2/demande
+
+ou par mail : 
 
 urgences.hopj@gmail.com
 
