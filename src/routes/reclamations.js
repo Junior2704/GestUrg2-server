@@ -3,10 +3,10 @@ import crypto from "node:crypto";
 import { adminDb } from "../firebaseAdmin.js";
 import { verifierFirebaseToken } from "../middleware/authFirebase.js";
 import { verifierMedecin } from "../middleware/verifierMedecin.js";
-
+import mailRouter from "./reclamationsMail.js";
 
 const router = express.Router();
-
+router.use(mailRouter);
 const COLLECTION = "reclamations";
 const SESSIONS = "sessionsReclamations";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -102,6 +102,8 @@ function dossierPublic(d) {
     description: d.description || "",
     attente: d.attente || "",
     statut: d.statut || "nouvelle",
+	canal: d.canal || "",
+    reponseParEmail: d.reponseParEmail === true,
     priorite: d.priorite || "normale",
     assigneA: d.assigneA || "",
     dateCreation: d.dateCreation || "",
@@ -122,7 +124,10 @@ function dossierAdmin(d, id) {
     patientAssociationConfirmee: d.patientAssociationConfirmee === true,
     noteInterne: d.noteInterne || "",
     echeance: d.echeance || null,
-    messages: Array.isArray(d.messages) ? d.messages : []
+    messages: Array.isArray(d.messages) ? d.messages : [],
+	    mailFrom: d.mailFrom || "",
+    mailSubject: d.mailSubject || "",
+    mailDate: d.mailDate || null
   };
 }
 
@@ -307,7 +312,7 @@ router.post("/patient/message", async (req, res) => {
   try {
     const session = await lireSessionPatient(req);
     if (!session) return erreur(res, 401, "Session de suivi invalide ou expirée. Veuillez vous reconnecter.");
-
+if (session.reclamation.canal === "email") return erreur(res, 403, "Cette demande est traitée par e-mail : l’envoi de messages n’est pas disponible.");
     const contenu = texte(req.body?.message, 5000);
     if (contenu.length < 2) return erreur(res, 400, "Le message doit contenir au moins 2 caractères.");
 
@@ -793,7 +798,7 @@ router.patch("/:id", verifierFirebaseToken, verifierMedecin, verifierDroitReclam
     }
 
     const messages = Array.isArray(before.messages) ? before.messages : [];
-    if (reponseUsager) {
+    if (reponseUsager && before.canal !== "email") {
       messages.push({
         auteurType: "professionnel",
         auteurLibelle: "Établissement",
