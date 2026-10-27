@@ -1,87 +1,41 @@
-import nodemailer from "nodemailer";
+import { google } from "googleapis";
 
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: process.env.SMTP_SECURE === "true",
+function gmail() {
+  const auth = new google.auth.OAuth2(
+    process.env.GMAIL_CLIENT_ID,
+    process.env.GMAIL_CLIENT_SECRET
+  );
+  auth.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
+  return google.gmail({ version: "v1", auth });
+}
 
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD
-    }
-});
+// Empêche l'injection d'en-têtes (retours à la ligne)
+const entete = v => String(v).replace(/[\r\n]+/g, " ").trim();
+const sujetMime = s => `=?UTF-8?B?${Buffer.from(entete(s), "utf-8").toString("base64")}?=`;
 
-export async function envoyerEmail({
-    to,
-    subject,
-    html,
-    text
-}) {
+export async function envoyerEmail({ to, subject, html, text, threadId, inReplyTo }) {
+  const destinataires = (Array.isArray(to) ? to : [to]).map(entete).join(", ");
+  const corps = html || text;
 
-    console.log("📧 Préparation envoi e-mail :", {
-        to,
-        typeTo: typeof to,
-        subject
-    });
+  const lignes = [
+    `To: ${destinataires}`,
+    `Subject: ${sujetMime(subject)}`,
+    "MIME-Version: 1.0",
+    `Content-Type: ${html ? "text/html" : "text/plain"}; charset="UTF-8"`,
+    "Content-Transfer-Encoding: base64"
+  ];
+  // Pour répondre dans le même fil (utile pour les réclamations)
+  if (inReplyTo) {
+    lignes.push(`In-Reply-To: ${entete(inReplyTo)}`, `References: ${entete(inReplyTo)}`);
+  }
+  lignes.push("", Buffer.from(corps, "utf-8").toString("base64"));
 
-    // ================================
-    // NORMALISATION DES DESTINATAIRES
-    // ================================
+  const raw = Buffer.from(lignes.join("\r\n"), "utf-8").toString("base64url");
 
-    let destinataires = [];
+  const res = await gmail().users.messages.send({
+    userId: "me",
+    requestBody: { raw, ...(threadId ? { threadId } : {}) }
+  });
 
-    if (Array.isArray(to)) {
-        destinataires = to
-            .flatMap(e => String(e).split("//"))
-            .map(e => e.trim())
-            .filter(Boolean);
-
-    } else if (typeof to === "string") {
-        destinataires = to
-            .split("//")
-            .map(e => e.trim())
-            .filter(Boolean);
-
-    } else if (to) {
-        destinataires = [String(to).trim()].filter(Boolean);
-    }
-
-    // ================================
-    // VÉRIFICATIONS
-    // ================================
-
-    if (destinataires.length === 0) {
-        throw new Error(
-            `Destinataire manquant. Valeur reçue : ${JSON.stringify(to)}`
-        );
-    }
-
-    if (!subject || !subject.trim()) {
-        throw new Error("Sujet manquant");
-    }
-
-    if (!html && !text) {
-        throw new Error("Contenu de l'e-mail manquant");
-    }
-
-    console.log("📧 Destinataires finaux :", destinataires);
-
-    // ================================
-    // ENVOI
-    // ================================
-
-    const info = await transporter.sendMail({
-        from: process.env.MAIL_FROM,
-        to: destinataires.join(", "),
-        subject: subject.trim(),
-        text,
-        html,
-        encoding: "UTF-8"
-    });
-
-    console.log("✅ E-mail envoyé :", info.messageId);
-
-    return {
-        messageId: info.messageId
-    };
+  return { messageId: res.data.id };
 }
