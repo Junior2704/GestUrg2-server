@@ -1035,6 +1035,28 @@ const emailHtml = `
      CONTACT
 ============================================================ -->
 
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        margin-top:28px;
+    "
+>
+
+<tr>
+
+<td
+    style="
+        background-color:#F8FBFA;
+        border:1px solid #E2EEEC;
+        border-radius:16px;
+        padding:18px 20px;
+    "
+>
+
+
 <p
     style="
         margin:28px 0 0;
@@ -1076,7 +1098,11 @@ const emailHtml = `
     </a>
 </p>
 
+</td>
 
+</tr>
+
+</table>
 <!-- ============================================================
      SÉPARATION
 ============================================================ -->
