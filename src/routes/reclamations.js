@@ -305,7 +305,33 @@ router.post("/patient/authenticate", async (req, res) => {
     return erreur(res, 500, "Impossible d’ouvrir le dossier pour le moment.");
   }
 });
+// ======================================================
+// PATIENT : recharger son dossier (session déjà ouverte)
+// GET /api/reclamations/patient/dossier
+// ======================================================
+router.get("/patient/dossier", async (req, res) => {
+  try {
+    const session = await lireSessionPatient(req);
+    if (!session) return erreur(res, 401, "Session de suivi invalide ou expirée. Veuillez vous reconnecter.");
 
+    const d = session.reclamation;
+    const messages = (Array.isArray(d.messages) ? d.messages : []).map(m => ({
+      auteurType: m.auteurType || "établissement",
+      auteurLibelle: m.auteurLibelle || (m.auteurType === "patient" ? "Vous" : "Établissement"),
+      contenu: m.contenu || "",
+      date: m.date || ""
+    }));
+
+    return res.json({
+      success: true,
+      reclamation: dossierPublic({ ...d, id: session.reclamationSnap.id }),
+      messages
+    });
+  } catch (error) {
+    console.error("Erreur rechargement dossier patient :", error);
+    return erreur(res, 500, "Impossible d’actualiser le dossier.");
+  }
+});
 // ======================================================
 // PATIENT : envoyer un message
 // POST /api/reclamations/patient/message
