@@ -179,7 +179,7 @@ app.use(
     "/api/reclamations",
     reclamationsRouter
 );
-app.use("/", calendarFeed);
+app.use("/api/calendarFeed", calendarFeed);
 // ======================================================
 // ROUTE RACINE
 // ======================================================
