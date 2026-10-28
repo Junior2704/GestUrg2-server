@@ -12,7 +12,7 @@ import authTestRouter from "./routes/authTest.js";
 import patientAccessRouter from "./routes/patientAccess.js";
 import rdvConfirmationRouter from "./routes/rdvConfirmation.js";
 import reclamationsRouter from "./routes/reclamations.js";
-import calendarFeed from "./routes/calendarFeed";
+import calendarFeed from "./routes/calendarFeed.js";
 const app = express();
 
 app.set("trust proxy", 1);
