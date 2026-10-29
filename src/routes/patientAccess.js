@@ -1056,7 +1056,16 @@ const emailHtml = `
     "
 >
 
-
+<p
+        style="
+            margin:0 0 7px;
+            color:#12312D;
+            font-size:14px;
+            font-weight:700;
+        "
+    >
+        Une question ? Une demande à nous faire ?
+    </p>
 <p
     style="
         margin:28px 0 0;
