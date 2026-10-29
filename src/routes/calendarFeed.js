@@ -8,10 +8,10 @@
  */
 
 import express from "express";
-import admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
 
 const router = express.Router();
-const db = admin.firestore();
+const db = getFirestore();
 
 // Confidentialité : false = seules les initiales apparaissent.
 const AFFICHER_NOM = false;
